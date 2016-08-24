@@ -157,13 +157,13 @@ define(function(require, exports, module) {
             });
 
             self.stage.addEventListener('touchstart', function(e) {
-                debugger;
+                self.imgStart(e);
             });
             self.stage.addEventListener('touchmove', function(e) {
-
+                self.imgMove(e);
             });
             self.stage.addEventListener('touchend', function(e) {
-
+                self.imgEnd(e);
             });
         };
         _public.addImage = function (info) {
@@ -296,20 +296,61 @@ define(function(require, exports, module) {
             this.imgContainer.addChild(this.img);
             self.stage.addChild(this.imgContainer);
 
+            if (self.imgs) {
+                self.imgs.push(this.imgContainer);
+            } else {
+                self.imgs = [this.imgContainer];
+            }
 
-            var mask = new Q.Graphics({
-                width: imgWidth + 20,
-                height: imgHeight + 10,
-                x: 0,
-                y: 0
+            var mask_1 = new Q.Graphics({
+                width: self.config.width + 5,
+                height: self.config.height,
+                x: -5,
+                y: -5
             });
-            mask.lineStyle(5, "#aaa").beginFill("#fff").drawRect(5, 5, imgWidth, imgHeight).endFill().cache();
-            mask.alpha = 0.5;
-            mask.visible = true;
-            self.stage.addChild(mask);
+            mask_1.lineStyle(5, "#fff").beginFill("#000", 0.5).drawRect(5, 5, self.config.width, (self.config.height - self.config.markHeight) / 2).endFill().cache();
+            mask_1.alpha = 0.5;
+            self.stage.addChild(mask_1);
+            self.imgs.push(mask_1);
+
+            var mask_2 = new Q.Graphics({
+                width: self.config.width + 5,
+                height: self.config.height,
+                x: -5,
+                y: ((self.config.height + self.config.markHeight) / 2) - 5
+            });
+            mask_2.lineStyle(5, "#fff").beginFill("#000", 0.5).drawRect(5, 5, self.config.width, (self.config.height - self.config.markHeight) / 2).endFill().cache();
+            mask_2.alpha = 0.5;
+            self.stage.addChild(mask_2);
+            self.imgs.push(mask_2);
+
+            var mask_3 = new Q.Graphics({
+                width: self.config.width + 5,
+                height: self.config.markHeight + 5,
+                x: -5,
+                y: ((self.config.height - self.config.markHeight) / 2) - 2.5
+            });
+            mask_3.lineStyle(5, "#fff").beginFill("#000", 0.5).drawRect(5, 5, 0, self.config.markHeight - 5).endFill().cache();
+            mask_3.alpha = 0.5;
+            self.stage.addChild(mask_3);
+            self.imgs.push(mask_3);
+
+            var mask_4 = new Q.Graphics({
+                width: self.config.width + 5,
+                height: self.config.markHeight + 5,
+                x: self.config.width -5,
+                y: ((self.config.height - self.config.markHeight) / 2) - 2.5
+            });
+            mask_4.lineStyle(5, "#fff").beginFill("#000", 0.5).drawRect(5, 5, 0, self.config.markHeight - 5).endFill().cache();
+            mask_4.alpha = 0.5;
+            self.stage.addChild(mask_4);
+            self.imgs.push(mask_4);
+
+            window.stage = self.stage;
         };
 
-        _private.imgStart = function (e) {
+        _public.imgStart = function (e) {
+            var self = this;
             var isMultiTouch = e.rawEvent && e.rawEvent.touches[1];
 
             if(!isMultiTouch){
@@ -354,9 +395,10 @@ define(function(require, exports, module) {
                 for (var i = 0; i < touches.length; i++) {
                     nCenterPoint.x += touches[i].x
                     nCenterPoint.y += touches[i].y;
-                };
+                }
                 nCenterPoint.x /= touches.length;
                 nCenterPoint.y /= touches.length;
+
 
                 // 2.触控中心点，在canvas中的位置
                 nCenterPoint.x -= self.canvas.offsetLeft;
@@ -400,7 +442,7 @@ define(function(require, exports, module) {
 
             }
         };
-        _private.imgMove = function(e){
+        _public.imgMove = function(e){
 
             // 检测记录当前触控信息
             // 1.记录触控坐标的数组
@@ -425,7 +467,7 @@ define(function(require, exports, module) {
 
             // 以下是三个支持多指操作的功能，缩放，移动，旋转
             // 双指缩放图片
-            if(!info.disScale && isMultiTouch){
+            if(isMultiTouch){
 
                 var dis = Math.sqrt(Math.pow(touches[1].x - touches[0].x, 2) + Math.pow(touches[1].y - touches[0].y, 2));
                 if (this.img.startScaleDistance) {
@@ -439,7 +481,7 @@ define(function(require, exports, module) {
             }
 
             // 移动图片
-            if(!info.disMove && this.img.moveabled){
+            if(this.img.moveabled){
                 // 将所有触点的移动距离加起来
                 var disX = 0, disY = 0;
                 for (var i = 0; i < touches.length; i++) {
@@ -462,8 +504,8 @@ define(function(require, exports, module) {
 
 
         };
-        _private.imgEnd = function(e){
-            img.moveabled = false;
+        _public.imgEnd = function(e){
+            this.img.moveabled = false;
             /*
              * 此处也要记录，是避免此种情况：
              * 1指按住的同时，2指离开，此时只会触发touchend，不会触发touchstart
@@ -473,20 +515,20 @@ define(function(require, exports, module) {
 
             if(!isMultiTouch){
                 // 记录单指
-                img.curW = this.imgContainer.getCurrentWidth();
-                img.curH = this.imgContainer.getCurrentHeight();
-                img.moveabled = true;
-                img.touchStart = [{
+                this.img.curW = this.imgContainer.getCurrentWidth();
+                this.img.curH = this.imgContainer.getCurrentHeight();
+                this.img.moveabled = true;
+                this.img.touchStart = [{
                     'x': e.eventX,
                     'y': e.eventY
                 }];
-                delete img.startScaleDistance;
+                delete this.img.startScaleDistance;
             }else{
                 // 记录两指
                 var touch1 = e.rawEvent.touches[0];
                 var touch2 = e.rawEvent.touches[1];
-                img.startScaleDistance = Math.sqrt(Math.pow(touch2.pageX - touch1.pageX, 2) + Math.pow(touch2.pageY - touch1.pageY, 2));
-                img.touchStart = [{
+                this.img.startScaleDistance = Math.sqrt(Math.pow(touch2.pageX - touch1.pageX, 2) + Math.pow(touch2.pageY - touch1.pageY, 2));
+                this.img.touchStart = [{
                     'x': touch1.pageX,
                     'y': touch1.pageY
                 },
@@ -498,6 +540,37 @@ define(function(require, exports, module) {
             }
 
         };
+        /**
+         * 清除画布
+         */
+        _public.clear = function() {
+            if (this.imgs) {
+                for (var i = 0; i < this.imgs.length; i++) {
+                    this.stage.removeChild(this.imgs[i]);
+                }
+            }
+        };
+
+
+        /**
+         * 导出base64数据
+         */
+        _public.toDataURL  = function(options, callback) {
+            var self = this;
+
+            var x = options.x || 0;
+            var y = options.y || 0;
+            var width = options.width || self.stage.width;
+            var height = options.height || self.stage.height;
+
+            // 已测手机QQ浏览器canvas.toDataURL有问题，使用jeegEncoder
+            window.setTimeout(function() {
+                var  encoder  =  new  JPEGEncoder();
+                var data =  encoder.encode(self.canvas.getContext('2d').getImageData(x, y, width, height),  90);
+                callback.call(self, data);
+            }, 1000 / self.config.fps)
+        }
+
     });
 
 });
