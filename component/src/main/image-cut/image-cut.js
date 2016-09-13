@@ -65,6 +65,31 @@ define(function(require, exports, module) {
             var context = new Quark.CanvasContext({
                 canvas: canvas
             });
+            // ****** 解决retina屏幕模糊问题 解决参考:http://www.seo-space.net/blog/244-html5-canvas-retina.html ** //
+            var ctx = context.context;
+            var backingStorePixelRatio = ctx.webkitBackingStorePixelRatio ||
+                ctx.mozBackingStorePixelRatio ||
+                ctx.msBackingStorePixelRatio ||
+                ctx.oBackingStorePixelRatio ||
+                ctx.backingStorePixelRatio || 1;
+
+            var devicePixelRatio = window.devicePixelRatio || 1;
+
+            var ratio = devicePixelRatio / backingStorePixelRatio;
+            this.ratio = ratio;
+            if (devicePixelRatio !== backingStorePixelRatio) {
+                var oldWidth = canvas.width;
+                var oldHeight = canvas.height;
+
+                canvas.width = oldWidth * ratio;
+                canvas.height = oldHeight * ratio;
+
+                canvas.style.width = oldWidth + 'px';
+                canvas.style.height = oldHeight + 'px';
+
+                ctx.scale(ratio, ratio);
+            }
+            // ****** 解决retina屏幕模糊问题 解决参考:http://www.seo-space.net/blog/244-html5-canvas-retina.html ** //
 
             /**
              * 舞台
@@ -557,11 +582,10 @@ define(function(require, exports, module) {
          */
         _public.toDataURL  = function(options, callback) {
             var self = this;
-
-            var x = options.x || 0;
-            var y = options.y || 0;
-            var width = options.width || self.stage.width;
-            var height = options.height || self.stage.height;
+            var x = (options.x || 0) * this.ratio;
+            var y = (options.y || 0) * this.ratio;
+            var width = (options.width || self.stage.width) * this.ratio;
+            var height = (options.height || self.stage.height) * this.ratio;
 
             // 已测手机QQ浏览器canvas.toDataURL有问题，使用jeegEncoder
             window.setTimeout(function() {
